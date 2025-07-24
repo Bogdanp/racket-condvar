@@ -86,12 +86,13 @@
        (λ () n))
      (define get-c1 (make-counter))
      (define get-c2 (make-counter))
+     (sync (system-idle-evt))
      (for ([_ (in-range 500)])
-       (sync (system-idle-evt))
-       (condvar-signal cvar))
+       (condvar-signal cvar)
+       (sync (system-idle-evt)))
      (semaphore-wait mu)
-     (check-true ((get-c1) . > . 200))
-     (check-true ((get-c2) . > . 200)))))
+     (check-eqv? (get-c1) 250)
+     (check-eqv? (get-c2) 250))))
 
 (module+ test
   (require rackunit/text-ui)

@@ -1,6 +1,6 @@
 #lang racket/base
 
-(require racket/random)
+(require racket/list)
 
 (provide
  make-condvar
@@ -50,7 +50,7 @@
 (define (signal-next-waiter! cvar)
   (define waiters (condvar-waiters cvar))
   (and (not (null? waiters))
-       (let ([waiter (random-ref waiters)])
+       (let ([waiter (last waiters)])
          (remove-condvar-waiter! cvar waiter)
          (semaphore-post waiter)
          waiter)))
