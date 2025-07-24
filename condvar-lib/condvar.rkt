@@ -45,18 +45,17 @@
   (define mu (condvar-mu cvar))
   (define waiters-box
     (condvar-waiters-box cvar))
-  (parameterize-break #f
-    (let loop ([locked? #f]
-               [waiters (unbox waiters-box)])
-      (cond
-        [(box-cas! waiters-box waiters (proc waiters))
-         (when locked?
-           (semaphore-post mu))]
-        [(eq? waiters (unbox waiters-box))
-         (loop #f waiters)]
-        [else
-         (semaphore-wait mu)
-         (loop #t (unbox waiters-box))]))))
+  (let loop ([acquired? #f]
+             [waiters (unbox waiters-box)])
+    (define waiters*
+      (proc waiters))
+    (cond
+      [(box-cas! waiters-box waiters waiters*) waiters*]
+      [(eq? waiters (unbox waiters-box)) (loop acquired? waiters)]
+      [acquired? (loop acquired? (unbox waiters-box))]
+      [else (call-with-semaphore mu
+              (lambda ()
+                (loop #t (unbox waiters-box))))])))
 
 (define (add-condvar-waiter! cvar waiter)
   (update-waiters! cvar (λ (waiters) (cons waiter waiters))))
