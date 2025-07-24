@@ -88,13 +88,19 @@
      (define get-c2 (make-counter))
      (sync (system-idle-evt))
      (for ([_ (in-range 500)])
-       (semaphore-wait mu)
        (condvar-signal cvar)
-       (semaphore-post mu)
        (sync (system-idle-evt)))
      (semaphore-wait mu)
      (check-eqv? (get-c1) 250)
-     (check-eqv? (get-c2) 250))))
+     (check-eqv? (get-c2) 250))
+
+   (test-case "error on open mutex"
+     (define cvar (make-condvar))
+     (define mu (make-semaphore 1))
+     (check-exn
+      #rx"mutex open"
+      (lambda ()
+        (condvar-wait-evt cvar mu))))))
 
 (module+ test
   (require rackunit/text-ui)

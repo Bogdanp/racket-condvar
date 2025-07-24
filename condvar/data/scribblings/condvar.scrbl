@@ -37,9 +37,10 @@ built on top of Racket's @|semaphores|.
   condition variable is signaled.
 
   The @racket[mutex] argument must be a semaphore whose internal
-  counter is zero at the time @racket[condvar-wait-evt] is called. This
-  procedure increments the @racket[mutex] internally, after registering
-  the waiter, then decrements it once the condition is signaled.
+  counter is zero at the time @racket[condvar-wait-evt] is called.
+  This procedure increments the @racket[mutex] internally after adding
+  the waiter to the waitlist, then decrements it once the condition is
+  signaled.
 }
 
 @defproc[(condvar-wait [cvar condvar?]
