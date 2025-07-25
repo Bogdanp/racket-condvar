@@ -32,18 +32,20 @@ built on top of Racket's @|semaphores|.
 }
 
 @defproc[(condvar-wait-evt [cvar condvar?]
-                           [mutex semaphore?]) evt?]{
+                           [mutex semaphore?])
+         (evt/c semaphore?)]{
   Returns a @event that may become ready for synchronization when the
-  condition variable is signaled.
+  condition variable is signaled. The synchronization result of the
+  event is @racket[mutex].
 
   The @racket[mutex] argument must be a semaphore whose internal
-  counter is zero at the time @racket[condvar-wait-evt] is called.
-  This procedure increments the @racket[mutex] internally after adding
-  the waiter to the waitlist, then decrements it once the condition is
-  signaled.
+  counter is zero at the time @racket[condvar-wait-evt] is called. This
+  procedure increments the @racket[mutex] internally after adding the
+  waiter to the waitlist, then decrements it once the returned event is
+  selected for synchronization.
 }
 
 @defproc[(condvar-wait [cvar condvar?]
-                       [mutex semaphore?]) void?]{
+                       [mutex semaphore?]) semaphore?]{
   Equivalent to @racket[(sync/enable-break (condvar-wait-evt cvar mutex))].
 }

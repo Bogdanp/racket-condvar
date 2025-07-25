@@ -1,14 +1,16 @@
 #lang racket/base
 
-(require racket/treelist)
+(require racket/contract/base
+         racket/treelist)
 
 (provide
- make-condvar
  condvar?
- condvar-signal
- condvar-broadcast
- condvar-wait-evt
- condvar-wait)
+ (contract-out
+  [make-condvar (-> condvar?)]
+  [condvar-signal (-> condvar? void?)]
+  [condvar-broadcast (-> condvar? void?)]
+  [condvar-wait-evt (-> condvar? semaphore? (evt/c semaphore?))]
+  [condvar-wait (-> condvar? semaphore? semaphore?)]))
 
 (struct condvar (mu waiters-box))
 
