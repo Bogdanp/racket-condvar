@@ -1,6 +1,6 @@
 #lang racket/base
 
-(require racket/list)
+(require racket/treelist)
 
 (provide
  make-condvar
@@ -15,7 +15,7 @@
 (define (make-condvar)
   (condvar
    #;mu (make-semaphore 1)
-   #;waiters-box (box null)))
+   #;waiters-box (box (treelist))))
 
 (define (condvar-signal cvar)
   (void (signal-next-waiter! cvar)))
@@ -58,26 +58,26 @@
                 (loop #t (unbox waiters-box))))])))
 
 (define (add-condvar-waiter! cvar waiter)
-  (update-waiters! cvar (λ (waiters) (cons waiter waiters))))
+  (update-waiters! cvar (λ (waiters) (treelist-add waiters waiter))))
 
 ;; XXX: The proc argument to update-waiters! may be called multiple
-;; times, so make sure to reset the result box if waiters is ever null.
+;; times, so make sure to reset the result box if waiters is ever empty.
 (define (pop-condvar-waiter! cvar)
   (define waiter-box (box #f))
   (update-waiters!
    cvar (λ (waiters)
           (cond
-            [(null? waiters)
+            [(treelist-empty? waiters)
              (set-box! waiter-box #f)
-             null]
+             waiters]
             [else
-             (define waiter (last waiters))
+             (define waiter (treelist-first waiters))
              (set-box! waiter-box waiter)
-             (remq waiter waiters)])))
+             (treelist-rest waiters)])))
   (unbox waiter-box))
 
 (define (remove-condvar-waiter! cvar waiter)
-  (update-waiters! cvar (λ (waiters) (remq waiter waiters))))
+  (update-waiters! cvar (λ (waiters) (treelist-remove waiters waiter))))
 
 ;; Guaranteed not to signal spuriously since waiter is removed from the
 ;; waitlist atomically by pop-condvar-waiter!.
@@ -85,3 +85,8 @@
   (define waiter (pop-condvar-waiter! cvar))
   (when waiter (semaphore-post waiter))
   waiter)
+
+(define (treelist-remove tl v)
+  (for/treelist ([w (in-treelist tl)]
+                 #:unless (eq? w v))
+    w))
